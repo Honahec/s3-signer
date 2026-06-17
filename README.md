@@ -58,7 +58,8 @@ bypass:
 LOCAL_DEV_AUTH_BYPASS=true
 ```
 
-This bypass is ignored when `NODE_ENV=production`.
+This bypass only works when `AUTH_URL`, `NEXTAUTH_URL`, or `PUBLIC_APP_URL`
+points at localhost or `127.0.0.1`, and it is disabled during `next build`.
 
 Generate secrets with:
 
