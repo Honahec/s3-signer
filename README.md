@@ -98,13 +98,6 @@ docker compose pull app
 docker compose up -d app
 ```
 
-## Database Migration
-
-This release updates the `download_links` table with new archive-related
-columns and a nullable `valid_until` field. The app applies the schema update
-automatically on startup, so no manual SQL migration is required. After
-upgrading, just restart the service once against the existing database.
-
 ## OIDC
 
 Register this callback URL in your OIDC provider:
