@@ -115,6 +115,26 @@ Register this callback URL in your OIDC provider:
 https://{PUBLIC_APP_URL}/api/auth/callback/pocketid
 ```
 
+## OSS RAM Permissions
+
+Grant the saved OSS access key only the bucket/object permissions needed by the
+app. The current flows require:
+
+```text
+oss:ListObjects
+oss:GetBucketInfo
+oss:GetObject
+oss:PutObject
+oss:DeleteObject
+oss:AbortMultipartUpload
+```
+
+`oss:GetBucketInfo` is used by the profile test action. `oss:PutObject` covers
+creating and uploading the generated ZIP with multipart upload, while
+`oss:AbortMultipartUpload` is used to clean up an unfinished multipart upload
+after a failure. `oss:DeleteObject` is used when deleting expired or manually
+removed generated ZIP objects.
+
 ## Reverse Proxy
 
 Run one app container and put two domains in front of it:
