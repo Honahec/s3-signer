@@ -5,14 +5,6 @@ import {
   sanitizeZipEntryName,
 } from "@/lib/zip";
 
-async function collect(stream: Readable) {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
-}
-
 describe("zip", () => {
   it("streams a stored zip archive with sanitized entry names", async () => {
     const bytes = await collect(
@@ -43,3 +35,11 @@ describe("zip", () => {
     expect(sanitizeZipEntryName("/tmp/../../c.txt")).toBe("tmp/c.txt");
   });
 });
+
+async function collect(stream: Readable) {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}

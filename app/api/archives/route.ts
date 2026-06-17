@@ -5,7 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { mapLink, mapProfile, query } from "@/lib/db";
 import { buildDownloadUrl } from "@/lib/env";
 import { publicLink } from "@/lib/serializers";
-import { createArchiveObject, deleteObject } from "@/lib/s3";
+import { createArchiveObject } from "@/lib/s3-archive";
+import { deleteObject } from "@/lib/s3";
 import { createArchiveSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";

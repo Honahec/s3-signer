@@ -5,20 +5,12 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   ListObjectsV2Command,
-  PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdtemp, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { Readable } from "node:stream";
-import { pipeline } from "node:stream/promises";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { decryptSecret } from "@/lib/crypto";
 import { getAppConfig } from "@/lib/env";
 import type { ObjectInfo, OssProfile, ProfileSnapshot } from "@/lib/types";
-import { createStoredZipStream, sanitizeZipEntryName } from "@/lib/zip";
 
 interface SigningProfile {
   endpoint: string;
@@ -133,36 +125,6 @@ export async function signDownloadUrl(
   });
 }
 
-export async function createArchiveObject(
-  profile: OssProfile,
-  archiveKey: string,
-  objectKeys: readonly string[]
-) {
-  const client = createClient(profile);
-  const entries = objectKeys.map((objectKey) => ({
-    name: sanitizeZipEntryName(objectKey),
-    body: async () => getObjectBody(client, profile.bucket, objectKey),
-  }));
-  const directory = await mkdtemp(join(tmpdir(), "s3-signer-archive-"));
-  const archivePath = join(directory, "archive.zip");
-
-  try {
-    await pipeline(createStoredZipStream(entries), createWriteStream(archivePath));
-    const archiveStat = await stat(archivePath);
-    await client.send(
-      new PutObjectCommand({
-        Bucket: profile.bucket,
-        Key: archiveKey,
-        Body: createReadStream(archivePath),
-        ContentLength: archiveStat.size,
-        ContentType: "application/zip",
-      })
-    );
-  } finally {
-    await rm(directory, { force: true, recursive: true });
-  }
-}
-
 export async function deleteObject(
   profile: Pick<
     OssProfile,
@@ -192,22 +154,4 @@ function buildDisposition(filename?: string | null) {
   }
 
   return `attachment; filename="${cleaned}"`;
-}
-
-async function getObjectBody(
-  client: S3Client,
-  bucket: string,
-  key: string
-): Promise<Readable> {
-  const result = await client.send(
-    new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    })
-  );
-  if (!result.Body) {
-    throw new Error(`Object body is empty: ${key}`);
-  }
-
-  return Readable.from([Buffer.from(await result.Body.transformToByteArray())]);
 }
