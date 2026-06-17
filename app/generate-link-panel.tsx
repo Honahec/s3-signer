@@ -13,9 +13,7 @@ import {
   ArchiveProgressIndicator,
   archiveStages,
 } from "@/app/archive-progress-indicator";
-import {
-  BusyIcon,
-} from "@/app/generate-link-shared";
+import { BusyIcon } from "@/app/generate-link-shared";
 import { ARCHIVE_LAYOUTS } from "@/lib/archive-layout";
 import type {
   ArchiveCreatePayload,
@@ -55,6 +53,7 @@ export function GenerateLinkPanel({
   onDownloadFilenameChange,
   onOpenProfile,
   onOpenObjectBrowser,
+  onSearchArchiveObjects,
   onCreateSingleLink,
   onCreateArchiveLink,
 }: GenerateLinkPanelProps) {
@@ -192,9 +191,9 @@ export function GenerateLinkPanel({
                   onArchiveObjectKeysInputChange={setArchiveObjectKeysInput}
                   onArchiveFilenameChange={setArchiveFilename}
                   onPreserveArchivePathsChange={setPreserveArchivePaths}
+                  onSearchArchiveObjects={onSearchArchiveObjects}
                   onValidForSecondsChange={onValidForSecondsChange}
                   onMaxDownloadsChange={onMaxDownloadsChange}
-                  onOpenObjectBrowser={onOpenObjectBrowser}
                   onAppendObjectKey={appendObjectKey}
                   onRemoveObjectKey={removeObjectKey}
                 />

@@ -36,6 +36,7 @@ export function SingleLinkForm({
   | "onObjectSearchChange"
   | "onOpenProfile"
   | "onCreateArchiveLink"
+  | "onSearchArchiveObjects"
 >) {
   return (
     <form onSubmit={onCreateSingleLink}>

@@ -31,6 +31,7 @@ export interface GenerateLinkPanelProps {
   readonly onOpenObjectBrowser: () => void;
   readonly onCreateSingleLink: (event: FormEvent<HTMLFormElement>) => void;
   readonly onCreateArchiveLink: (payload: ArchiveCreatePayload) => Promise<boolean>;
+  readonly onSearchArchiveObjects: () => void;
 }
 
 export interface LinkOptionProps {

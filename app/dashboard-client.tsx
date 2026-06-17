@@ -21,7 +21,6 @@ import {
   MoreHorizontalIcon,
   PlusIcon,
   RefreshCwIcon,
-  SearchIcon,
   SunIcon,
   Trash2Icon,
 } from "lucide-react";
@@ -69,12 +68,6 @@ import {
   FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -91,6 +84,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GenerateLinkPanel, type ArchiveCreatePayload } from "@/app/generate-link-panel";
+import { ObjectBrowserDialog } from "@/app/object-browser-dialog";
 import type { LinkResponse, ObjectInfo, PublicOssProfile } from "@/lib/types";
 
 interface DashboardClientProps {
@@ -427,6 +421,10 @@ export function DashboardClient({ user }: DashboardClientProps) {
     void loadObjects(false, initialQuery, null);
   }
 
+  function searchArchiveObjects() {
+    void loadObjects(false, objectSearch, null);
+  }
+
   const isDark = resolvedTheme === "dark";
 
   return (
@@ -529,6 +527,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
               onDownloadFilenameChange={setDownloadFilename}
               onOpenProfile={openNewProfile}
               onOpenObjectBrowser={openObjectBrowser}
+              onSearchArchiveObjects={searchArchiveObjects}
               onCreateSingleLink={createLink}
               onCreateArchiveLink={createArchiveLink}
             />
@@ -876,109 +875,22 @@ export function DashboardClient({ user }: DashboardClientProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={objectDialogOpen} onOpenChange={setObjectDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Object Browser</DialogTitle>
-            <DialogDescription>
-              {selectedProfile
-                ? `${selectedProfile.name} · ${selectedProfile.bucket}`
-                : "Select an OSS profile"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <InputGroup>
-              <InputGroupAddon>
-                <SearchIcon />
-              </InputGroupAddon>
-              <InputGroupInput
-                value={objectSearch}
-                onChange={(event) => setObjectSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    void loadObjects(false, objectSearch, null);
-                  }
-                }}
-                placeholder="Search by object key"
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  onClick={() => loadObjects(false, objectSearch, null)}
-                  disabled={isBusy("objects-search")}
-                >
-                  <BusyIcon
-                    busy={isBusy("objects-search")}
-                    idle={<SearchIcon data-icon="inline-start" />}
-                  />
-                  Search
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-            <div className="max-h-96 overflow-auto rounded-lg border">
-              {objects.length ? (
-                <Table>
-                  <TableBody>
-                    {objects.map((object) => (
-                      <TableRow key={object.key}>
-                        <TableCell className="max-w-lg truncate font-medium">
-                          {object.key}
-                        </TableCell>
-                        <TableCell>{formatBytes(object.size)}</TableCell>
-                        <TableCell>{object.storageClass ?? ""}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setObjectKey(object.key);
-                              setObjectDialogOpen(false);
-                            }}
-                          >
-                            Select
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <SearchIcon />
-                    </EmptyMedia>
-                    <EmptyTitle>No objects</EmptyTitle>
-                    <EmptyDescription>
-                      Matching objects will appear here.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!nextContinuationToken || isBusy("objects-next")}
-              onClick={() => loadObjects(true)}
-            >
-              {isBusy("objects-next") && (
-                <Loader2Icon
-                  data-icon="inline-start"
-                  className="animate-spin"
-                />
-              )}
-              Next page
-            </Button>
-            <Button type="button" onClick={() => setObjectDialogOpen(false)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ObjectBrowserDialog
+        open={objectDialogOpen}
+        selectedProfile={selectedProfile}
+        objectSearch={objectSearch}
+        objects={objects}
+        nextContinuationToken={nextContinuationToken}
+        isObjectSearchBusy={isBusy("objects-search")}
+        onOpenChange={setObjectDialogOpen}
+        onObjectSearchChange={setObjectSearch}
+        onSearch={searchArchiveObjects}
+        onNextPage={() => loadObjects(true)}
+        onSelect={(objectKey) => {
+          setObjectKey(objectKey);
+          setObjectDialogOpen(false);
+        }}
+      />
     </main>
   );
 
@@ -1117,18 +1029,4 @@ function formatDate(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function formatBytes(value: number) {
-  if (value < 1024) {
-    return `${value} B`;
-  }
-  const units = ["KB", "MB", "GB", "TB"];
-  let size = value / 1024;
-  let unit = 0;
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024;
-    unit += 1;
-  }
-  return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unit]}`;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpenIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import {
   Field,
   FieldContent,
@@ -11,13 +11,19 @@ import {
 import {
   InputGroup,
   InputGroupAddon,
-  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import type { ObjectInfo, PublicOssProfile } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { BusyIcon, LinkOptions, ProfileField } from "@/app/generate-link-shared";
 
 export function ArchiveLinkFields({
@@ -37,9 +43,9 @@ export function ArchiveLinkFields({
   onArchiveObjectKeysInputChange,
   onArchiveFilenameChange,
   onPreserveArchivePathsChange,
+  onSearchArchiveObjects,
   onValidForSecondsChange,
   onMaxDownloadsChange,
-  onOpenObjectBrowser,
   onAppendObjectKey,
   onRemoveObjectKey,
 }: {
@@ -59,9 +65,9 @@ export function ArchiveLinkFields({
   readonly onArchiveObjectKeysInputChange: (value: string) => void;
   readonly onArchiveFilenameChange: (value: string) => void;
   readonly onPreserveArchivePathsChange: (preserve: boolean) => void;
+  readonly onSearchArchiveObjects: () => void;
   readonly onValidForSecondsChange: (seconds: string) => void;
   readonly onMaxDownloadsChange: (downloads: string) => void;
-  readonly onOpenObjectBrowser: () => void;
   readonly onAppendObjectKey: (objectKey: string) => void;
   readonly onRemoveObjectKey: (objectKey: string) => void;
 }) {
@@ -82,17 +88,57 @@ export function ArchiveLinkFields({
           required
         />
       </Field>
-      <ArchiveObjectPicker
-        selectedProfileId={selectedProfileId}
-        objectSearch={objectSearch}
-        objects={objects}
-        archiveObjectKeys={archiveObjectKeys}
-        isObjectSearchBusy={isObjectSearchBusy}
-        onObjectSearchChange={onObjectSearchChange}
-        onOpenObjectBrowser={onOpenObjectBrowser}
-        onAppendObjectKey={onAppendObjectKey}
-        onRemoveObjectKey={onRemoveObjectKey}
-      />
+      <Field>
+        <FieldLabel>Search objects</FieldLabel>
+        <InputGroup>
+          <InputGroupAddon>
+            <SearchIcon />
+          </InputGroupAddon>
+          <InputGroupInput
+            value={objectSearch}
+            onChange={(event) => onObjectSearchChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                onSearchArchiveObjects();
+              }
+            }}
+            placeholder="Search objects in the bucket"
+          />
+          <InputGroupAddon align="inline-end">
+            <BusyIcon
+              busy={isObjectSearchBusy}
+              idle={<SearchIcon data-icon="inline-start" />}
+            />
+          </InputGroupAddon>
+        </InputGroup>
+      </Field>
+      {objects.length ? (
+        <div className="grid gap-2 md:grid-cols-2">
+          {objects.map((object) => (
+            <ArchiveObjectCandidate
+              key={object.key}
+              objectKey={object.key}
+              selected={archiveObjectKeys.includes(object.key)}
+              onAppendObjectKey={onAppendObjectKey}
+              onRemoveObjectKey={onRemoveObjectKey}
+            />
+          ))}
+        </div>
+      ) : (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchIcon />
+            </EmptyMedia>
+            <EmptyTitle>No objects yet</EmptyTitle>
+            <EmptyDescription>
+              Press Enter to search and add files from the bucket.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent />
+        </Empty>
+      )}
       <Field orientation="horizontal">
         <FieldContent>
           <FieldTitle>Keep bucket folders</FieldTitle>
@@ -118,70 +164,6 @@ export function ArchiveLinkFields({
   );
 }
 
-function ArchiveObjectPicker({
-  selectedProfileId,
-  objectSearch,
-  objects,
-  archiveObjectKeys,
-  isObjectSearchBusy,
-  onObjectSearchChange,
-  onOpenObjectBrowser,
-  onAppendObjectKey,
-  onRemoveObjectKey,
-}: {
-  readonly selectedProfileId: string;
-  readonly objectSearch: string;
-  readonly objects: readonly ObjectInfo[];
-  readonly archiveObjectKeys: readonly string[];
-  readonly isObjectSearchBusy: boolean;
-  readonly onObjectSearchChange: (query: string) => void;
-  readonly onOpenObjectBrowser: () => void;
-  readonly onAppendObjectKey: (objectKey: string) => void;
-  readonly onRemoveObjectKey: (objectKey: string) => void;
-}) {
-  return (
-    <div className="rounded-lg border bg-muted/30 p-3">
-      <div className="flex flex-col gap-3">
-        <InputGroup>
-          <InputGroupAddon>
-            <SearchIcon />
-          </InputGroupAddon>
-          <InputGroupInput
-            value={objectSearch}
-            onChange={(event) => onObjectSearchChange(event.target.value)}
-            placeholder="Search objects, then add them to the ZIP"
-          />
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              onClick={onOpenObjectBrowser}
-              disabled={!selectedProfileId || isObjectSearchBusy}
-            >
-              <BusyIcon
-                busy={isObjectSearchBusy}
-                idle={<FolderOpenIcon data-icon="inline-start" />}
-              />
-              Browse
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
-        {objects.length ? (
-          <div className="grid gap-2 md:grid-cols-2">
-            {objects.slice(0, 6).map((object) => (
-              <ArchiveObjectCandidate
-                key={object.key}
-                objectKey={object.key}
-                selected={archiveObjectKeys.includes(object.key)}
-                onAppendObjectKey={onAppendObjectKey}
-                onRemoveObjectKey={onRemoveObjectKey}
-              />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function ArchiveObjectCandidate({
   objectKey,
   selected,
@@ -196,10 +178,9 @@ function ArchiveObjectCandidate({
   return (
     <button
       type="button"
-      className={cn(
-        "flex min-w-0 items-center justify-between gap-2 rounded-lg border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-        selected && "border-primary bg-primary/5",
-      )}
+      className={`flex min-w-0 items-center justify-between gap-2 rounded-lg border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+        selected ? "border-primary bg-primary/5" : ""
+      }`}
       onClick={() =>
         selected ? onRemoveObjectKey(objectKey) : onAppendObjectKey(objectKey)
       }
