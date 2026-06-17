@@ -9,6 +9,7 @@ import { publicLink } from "@/lib/serializers";
 import { createArchiveObject } from "@/lib/s3-archive";
 import { deleteObject } from "@/lib/s3";
 import { createArchiveSchema } from "@/lib/validators";
+import { isDebugMode } from "@/lib/runtime-mode";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,11 @@ export async function POST(request: Request) {
     const archiveKey = `s3-signer-archives/${user.id}/${linkId}.zip`;
     const downloadFilename = payload.downloadFilename ?? `${linkId}.zip`;
 
-    await createArchiveObject(profile, archiveKey, payload.objectKeys);
+    try {
+      await createArchiveObject(profile, archiveKey, payload.objectKeys);
+    } catch (error) {
+      throw stageError("archive-create", error);
+    }
 
     try {
       const validUntil =
@@ -70,8 +75,12 @@ export async function POST(request: Request) {
         { status: 201 }
       );
     } catch (error) {
-      await deleteObject(profile, archiveKey);
-      throw error;
+      try {
+        await deleteObject(profile, archiveKey);
+      } catch (cleanupError) {
+        console.error(stageError("archive-cleanup", cleanupError));
+      }
+      throw stageError("archive-insert", error);
     }
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -79,4 +88,15 @@ export async function POST(request: Request) {
     }
     return jsonError(error);
   }
+}
+
+function stageError(stage: string, error: unknown) {
+  const wrapped = error instanceof Error ? error : new Error(String(error));
+  wrapped.message = `[archives:${stage}] ${wrapped.message}`;
+
+  if (isDebugMode()) {
+    console.error(wrapped);
+  }
+
+  return wrapped;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { isDebugMode } from "@/lib/runtime-mode";
 
 export class HttpError extends Error {
   constructor(
@@ -12,7 +13,10 @@ export class HttpError extends Error {
 
 export function jsonError(error: unknown) {
   if (error instanceof HttpError) {
-    return NextResponse.json({ message: error.message }, { status: error.status });
+    return NextResponse.json(
+      errorPayload(error.status, error.message, error),
+      { status: error.status }
+    );
   }
 
   if (error instanceof ZodError) {
@@ -23,5 +27,27 @@ export function jsonError(error: unknown) {
   }
 
   console.error(error);
-  return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+  return NextResponse.json(
+    errorPayload(500, "Internal server error", error),
+    { status: 500 }
+  );
+}
+
+function errorPayload(status: number, message: string, error: unknown) {
+  if (!isDebugMode()) {
+    return { message };
+  }
+
+  return {
+    message,
+    status,
+    error:
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : String(error),
+  };
 }

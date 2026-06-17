@@ -61,6 +61,15 @@ LOCAL_DEV_AUTH_BYPASS=true
 This bypass only works when `AUTH_URL`, `NEXTAUTH_URL`, or `PUBLIC_APP_URL`
 points at localhost or `127.0.0.1`, and it is disabled during `next build`.
 
+To inspect server-side failures, set:
+
+```env
+MODE=debug
+```
+
+`production` is the default. In debug mode, API errors include limited
+diagnostic details and `/api/archives` logs the failing stage.
+
 Generate secrets with:
 
 ```bash
