@@ -21,8 +21,8 @@ docker compose up -d app
 - Encrypted storage credentials for S3-compatible services such as Aliyun OSS.
 - Object browser with keyword search.
 - Link creation, link history, soft delete, and cleanup support.
-- Archive creation that uploads a generated ZIP object back to the bucket and
-  exposes it through the same signed download flow.
+- ZIP batch downloads that generate a temporary archive object and expose it
+  through the same signed download flow.
 - Public download endpoint that generates a new presigned URL for each request.
 - Docker deployment with PostgreSQL persistence.
 
@@ -98,6 +98,13 @@ docker compose pull app
 docker compose up -d app
 ```
 
+## Database Migration
+
+This release updates the `download_links` table with new archive-related
+columns and a nullable `valid_until` field. The app applies the schema update
+automatically on startup, so no manual SQL migration is required. After
+upgrading, just restart the service once against the existing database.
+
 ## OIDC
 
 Register this callback URL in your OIDC provider:
@@ -114,27 +121,3 @@ Run one app container and put two domains in front of it:
 - `{PUBLIC_DOWNLOAD_BASE_URL}/*` proxies to `/download/*` on the same app.
 
 The app listens on port `3000` inside Docker Compose.
-
-## Archive API
-
-Create an archive object from existing bucket objects:
-
-```http
-POST /api/archives
-Content-Type: application/json
-```
-
-```json
-{
-  "profileId": "00000000-0000-4000-8000-000000000000",
-  "objectKeys": ["reports/a.pdf", "reports/b.pdf"],
-  "validForSeconds": 86400,
-  "maxDownloads": null,
-  "downloadFilename": "reports.zip"
-}
-```
-
-The API writes `s3-signer-archives/{userId}/{linkId}.zip` into the same bucket,
-creates a normal public download link for that ZIP object, and returns the link
-URL. Running link cleanup, or deleting that link manually, also deletes the
-generated archive object.
