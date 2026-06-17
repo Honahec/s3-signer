@@ -76,4 +76,15 @@ describe("validators", () => {
     expect(result.objectKeys).toHaveLength(2);
     expect(result.downloadFilename).toBe("bundle.zip");
   });
+
+  it("accepts permanent archive link validity", () => {
+    expect(
+      createArchiveSchema.parse({
+        profileId: "00000000-0000-4000-8000-000000000000",
+        objectKeys: ["archives/a.txt", "archives/b.txt"],
+        validForSeconds: null,
+        downloadFilename: "bundle.zip",
+      }).validForSeconds
+    ).toBeNull();
+  });
 });

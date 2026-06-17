@@ -14,7 +14,6 @@ import {
   CheckCircleIcon,
   CopyIcon,
   FileIcon,
-  FolderOpenIcon,
   KeyRoundIcon,
   Loader2Icon,
   LogOutIcon,
@@ -76,14 +75,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -99,6 +90,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GenerateLinkPanel } from "@/app/generate-link-panel";
 import type { LinkResponse, ObjectInfo, PublicOssProfile } from "@/lib/types";
 
 interface DashboardClientProps {
@@ -251,6 +243,43 @@ export function DashboardClient({ user }: DashboardClientProps) {
       setObjectKey("");
       setDownloadFilename("");
     });
+  }
+
+  async function createArchiveLink({
+    objectKeys,
+    downloadFilename,
+  }: {
+    readonly objectKeys: readonly string[];
+    readonly downloadFilename: string | null;
+  }) {
+    if (!selectedProfileId) {
+      toast.error("Create an OSS profile first.");
+      return false;
+    }
+
+    let succeeded = false;
+    await runBusy("create-archive", async () => {
+      const payload = {
+        profileId: selectedProfileId,
+        objectKeys,
+        validForSeconds:
+          validForSeconds === "Permanent" ? null : Number(validForSeconds),
+        maxDownloads: maxDownloads ? Number(maxDownloads) : null,
+        downloadFilename,
+      };
+      const data = await api<{ link: LinkResponse; url: string }>(
+        "/api/archives",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      setLinks((current) => [data.link, ...current]);
+      await copyText(data.url);
+      succeeded = true;
+      toast.success("ZIP link copied.");
+    });
+    return succeeded;
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -480,139 +509,30 @@ export function DashboardClient({ user }: DashboardClientProps) {
           </TabsList>
 
           <TabsContent value="create">
-            <Card>
-              <CardHeader>
-                <CardTitle>Generate Link</CardTitle>
-                <CardDescription>
-                  {selectedProfile
-                    ? `${selectedProfile.bucket} · ${selectedProfile.endpoint}`
-                    : "No OSS profile selected"}
-                </CardDescription>
-                <CardAction>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={openNewProfile}
-                  >
-                    <PlusIcon data-icon="inline-start" />
-                    Profile
-                  </Button>
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={createLink}>
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel>OSS profile</FieldLabel>
-                      <Select
-                        value={selectedProfileId}
-                        onValueChange={(value) =>
-                          setSelectedProfileId(value ?? "")
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select profile" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {profiles.map((profile) => (
-                              <SelectItem key={profile.id} value={profile.id}>
-                                {profile.name} · {profile.bucket}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <Field>
-                      <FieldLabel>Object key</FieldLabel>
-                      <InputGroup>
-                        <InputGroupInput
-                          value={objectKey}
-                          onChange={(event) => setObjectKey(event.target.value)}
-                          placeholder="archives/report.zip"
-                          required
-                        />
-                        <InputGroupAddon align="inline-end">
-                          <InputGroupButton
-                            onClick={openObjectBrowser}
-                            disabled={
-                              !selectedProfileId || isBusy("objects-search")
-                            }
-                          >
-                            <BusyIcon
-                              busy={isBusy("objects-search")}
-                              idle={<FolderOpenIcon data-icon="inline-start" />}
-                            />
-                            Browse
-                          </InputGroupButton>
-                        </InputGroupAddon>
-                      </InputGroup>
-                    </Field>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <Field>
-                        <FieldLabel>Valid for</FieldLabel>
-                        <Select
-                          value={validForSeconds}
-                          onValueChange={(value) =>
-                            setValidForSeconds(value ?? "86400")
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectItem value="3600">1 hour</SelectItem>
-                              <SelectItem value="86400">1 day</SelectItem>
-                              <SelectItem value="604800">7 days</SelectItem>
-                              <SelectItem value="2592000">30 days</SelectItem>
-                              <SelectItem value="Permanent">
-                                Permanent
-                              </SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </Field>
-                      <Field>
-                        <FieldLabel>Max downloads</FieldLabel>
-                        <Input
-                          value={maxDownloads}
-                          onChange={(event) =>
-                            setMaxDownloads(event.target.value)
-                          }
-                          inputMode="numeric"
-                          placeholder="Unlimited"
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel>Filename</FieldLabel>
-                        <Input
-                          value={downloadFilename}
-                          onChange={(event) =>
-                            setDownloadFilename(event.target.value)
-                          }
-                          placeholder="Optional"
-                        />
-                      </Field>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button
-                        type="submit"
-                        disabled={isBusy("create-link") || !profiles.length}
-                      >
-                        <BusyIcon
-                          busy={isBusy("create-link")}
-                          idle={<CopyIcon data-icon="inline-start" />}
-                        />
-                        Generate and copy
-                      </Button>
-                    </div>
-                  </FieldGroup>
-                </form>
-              </CardContent>
-            </Card>
+            <GenerateLinkPanel
+              profiles={profiles}
+              selectedProfileId={selectedProfileId}
+              selectedProfile={selectedProfile}
+              objects={objects}
+              objectKey={objectKey}
+              objectSearch={objectSearch}
+              validForSeconds={validForSeconds}
+              maxDownloads={maxDownloads}
+              downloadFilename={downloadFilename}
+              isObjectSearchBusy={isBusy("objects-search")}
+              isSingleLinkBusy={isBusy("create-link")}
+              isArchiveBusy={isBusy("create-archive")}
+              onProfileChange={setSelectedProfileId}
+              onObjectKeyChange={setObjectKey}
+              onObjectSearchChange={setObjectSearch}
+              onValidForSecondsChange={setValidForSeconds}
+              onMaxDownloadsChange={setMaxDownloads}
+              onDownloadFilenameChange={setDownloadFilename}
+              onOpenProfile={openNewProfile}
+              onOpenObjectBrowser={openObjectBrowser}
+              onCreateSingleLink={createLink}
+              onCreateArchiveLink={createArchiveLink}
+            />
           </TabsContent>
 
           <TabsContent value="profiles">

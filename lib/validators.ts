@@ -48,7 +48,8 @@ export const createArchiveSchema = z.object({
     .number()
     .int()
     .min(60)
-    .max(60 * 60 * 24 * 365),
+    .max(60 * 60 * 24 * 365)
+    .nullable(),
   maxDownloads: z.number().int().min(1).max(1_000_000).optional().nullable(),
   downloadFilename: z
     .string()
