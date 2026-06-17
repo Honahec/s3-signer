@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import type { NextAuthOptions, Profile, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import { HttpError } from "@/lib/api";
+import { getDevBypassUser } from "@/lib/dev-auth";
 import { getAppConfig } from "@/lib/env";
 
 interface PocketIdProfile extends Profile {
@@ -32,61 +33,65 @@ function hasAdminGroup(groups: string[]) {
   return groups.some((group) => allowed.has(group));
 }
 
-export const authOptions: NextAuthOptions = {
-  secret: getAppConfig().authSecret,
-  session: {
-    strategy: "jwt",
-  },
-  providers: [
-    {
-      id: "pocketid",
-      name: "PocketID",
-      type: "oauth",
-      wellKnown: `${getAppConfig().oidcIssuer}/.well-known/openid-configuration`,
-      clientId: getAppConfig().oidcClientId,
-      clientSecret: getAppConfig().oidcClientSecret,
-      authorization: {
-        params: {
-          scope: "openid profile email groups",
+export function getAuthOptions(): NextAuthOptions {
+  const config = getAppConfig();
+
+  return {
+    secret: config.authSecret,
+    session: {
+      strategy: "jwt",
+    },
+    providers: [
+      {
+        id: "pocketid",
+        name: "PocketID",
+        type: "oauth",
+        wellKnown: `${config.oidcIssuer}/.well-known/openid-configuration`,
+        clientId: config.oidcClientId,
+        clientSecret: config.oidcClientSecret,
+        authorization: {
+          params: {
+            scope: "openid profile email groups",
+          },
+        },
+        idToken: true,
+        checks: ["pkce", "state"],
+        profile(profile: PocketIdProfile) {
+          if (!profile.sub) {
+            throw new Error("OIDC profile is missing sub");
+          }
+
+          return {
+            id: profile.sub,
+            name: profile.name ?? profile.preferred_username ?? profile.username,
+            email: profile.email,
+            image: profile.picture,
+            groups: profileGroups(profile),
+          };
         },
       },
-      idToken: true,
-      checks: ["pkce", "state"],
-      profile(profile: PocketIdProfile) {
-        if (!profile.sub) {
-          throw new Error("OIDC profile is missing sub");
+    ],
+    callbacks: {
+      async signIn({ profile }) {
+        return hasAdminGroup(profileGroups(profile as PocketIdProfile));
+      },
+      async jwt({ token, profile, user }) {
+        const pocketProfile = profile as PocketIdProfile | undefined;
+        if (pocketProfile?.sub) {
+          token.sub = pocketProfile.sub;
+          token.groups = profileGroups(pocketProfile);
         }
-
-        return {
-          id: profile.sub,
-          name: profile.name ?? profile.preferred_username ?? profile.username,
-          email: profile.email,
-          image: profile.picture,
-          groups: profileGroups(profile),
-        };
+        if (user?.name) {
+          token.name = user.name;
+        }
+        return token;
+      },
+      async session({ session, token }) {
+        return attachTokenToSession(session, token);
       },
     },
-  ],
-  callbacks: {
-    async signIn({ profile }) {
-      return hasAdminGroup(profileGroups(profile as PocketIdProfile));
-    },
-    async jwt({ token, profile, user }) {
-      const pocketProfile = profile as PocketIdProfile | undefined;
-      if (pocketProfile?.sub) {
-        token.sub = pocketProfile.sub;
-        token.groups = profileGroups(pocketProfile);
-      }
-      if (user?.name) {
-        token.name = user.name;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      return attachTokenToSession(session, token);
-    },
-  },
-};
+  };
+}
 
 function attachTokenToSession(session: Session, token: JWT) {
   if (session.user) {
@@ -98,7 +103,12 @@ function attachTokenToSession(session: Session, token: JWT) {
 }
 
 export async function requireUser() {
-  const session = await getServerSession(authOptions);
+  const devUser = getDevBypassUser();
+  if (devUser) {
+    return devUser;
+  }
+
+  const session = await getServerSession(getAuthOptions());
   const userId = session?.user?.id;
 
   if (!userId) {

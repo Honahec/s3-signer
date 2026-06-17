@@ -1,10 +1,24 @@
 import { getServerSession } from "next-auth";
 import { LoginPanel } from "@/app/login-panel";
 import { DashboardClient } from "@/app/dashboard-client";
-import { authOptions } from "@/lib/auth";
+import { getAuthOptions } from "@/lib/auth";
+import { getDevBypassUser } from "@/lib/dev-auth";
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const devUser = getDevBypassUser();
+  if (devUser) {
+    return (
+      <DashboardClient
+        user={{
+          id: devUser.id,
+          name: devUser.name,
+          email: devUser.email,
+        }}
+      />
+    );
+  }
+
+  const session = await getServerSession(getAuthOptions());
 
   if (!session?.user?.id) {
     return <LoginPanel />;

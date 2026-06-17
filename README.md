@@ -51,6 +51,15 @@ PORT=3000
 DATABASE_URL=postgres://s3_signer:s3_signer@postgres:5432/s3_signer
 ```
 
+For local UI/API development without PocketID login, enable the dev-only auth
+bypass:
+
+```env
+LOCAL_DEV_AUTH_BYPASS=true
+```
+
+This bypass is ignored when `NODE_ENV=production`.
+
 Generate secrets with:
 
 ```bash
