@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { HttpError, jsonError } from "@/lib/api";
 import { requireUser } from "@/lib/auth";
 import { mapLink, mapProfile, query } from "@/lib/db";
+import { toJsonbParam } from "@/lib/db-json";
 import { buildDownloadUrl } from "@/lib/env";
 import { publicLink } from "@/lib/serializers";
 import { createArchiveObject } from "@/lib/s3-archive";
@@ -47,15 +48,15 @@ export async function POST(request: Request) {
           linkId,
           user.id,
           profile.id,
-          {
+          toJsonbParam({
             name: profile.name,
             endpoint: profile.endpoint,
             region: profile.region,
             bucket: profile.bucket,
             forcePathStyle: profile.forcePathStyle,
-          },
+          }),
           archiveKey,
-          payload.objectKeys,
+          toJsonbParam(payload.objectKeys),
           archiveKey,
           validUntil,
           payload.maxDownloads ?? null,
