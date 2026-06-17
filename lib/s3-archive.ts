@@ -2,7 +2,9 @@ import "server-only";
 
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "node:stream";
+import { buildArchiveEntryNames } from "@/lib/archive-entry-names";
 import { decryptSecret } from "@/lib/crypto";
+import type { ArchiveLayout } from "@/lib/archive-layout";
 import type { OssProfile } from "@/lib/types";
 import { uploadStreamMultipart } from "@/lib/s3-multipart";
 import { createStoredZipStream, sanitizeZipEntryName } from "@/lib/zip";
@@ -40,12 +42,14 @@ function createNodeClient(profile: SigningProfile) {
 export async function createArchiveObject(
   profile: OssProfile,
   archiveKey: string,
-  objectKeys: readonly string[]
+  objectKeys: readonly string[],
+  layout: ArchiveLayout
 ) {
   const client = createNodeClient(profile);
+  const entryNames = buildArchiveEntryNames(objectKeys, layout);
   const zip = createStoredZipStream(
-    objectKeys.map((objectKey) => ({
-      name: sanitizeZipEntryName(objectKey),
+    objectKeys.map((objectKey, index) => ({
+      name: entryNames[index] ?? sanitizeZipEntryName(objectKey),
       body: async () => getObjectBody(client, profile.bucket, objectKey),
     }))
   );

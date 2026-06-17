@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ARCHIVE_LAYOUTS } from "@/lib/archive-layout";
 import {
   createArchiveSchema,
   createLinkSchema,
@@ -69,12 +70,14 @@ describe("validators", () => {
     const result = createArchiveSchema.parse({
       profileId: "00000000-0000-4000-8000-000000000000",
       objectKeys: ["archives/a.txt", "archives/b.txt"],
+      archiveLayout: ARCHIVE_LAYOUTS.flat,
       validForSeconds: 3600,
       downloadFilename: "bundle.zip",
     });
 
     expect(result.objectKeys).toHaveLength(2);
     expect(result.downloadFilename).toBe("bundle.zip");
+    expect(result.archiveLayout).toBe(ARCHIVE_LAYOUTS.flat);
   });
 
   it("accepts permanent archive link validity", () => {
@@ -86,5 +89,16 @@ describe("validators", () => {
         downloadFilename: "bundle.zip",
       }).validForSeconds
     ).toBeNull();
+  });
+
+  it("defaults archive layout to preserve", () => {
+    expect(
+      createArchiveSchema.parse({
+        profileId: "00000000-0000-4000-8000-000000000000",
+        objectKeys: ["archives/a.txt"],
+        validForSeconds: 3600,
+        downloadFilename: "bundle.zip",
+      }).archiveLayout
+    ).toBe(ARCHIVE_LAYOUTS.preserve);
   });
 });

@@ -1,13 +1,20 @@
 "use client";
 
 import { FolderOpenIcon, SearchIcon } from "lucide-react";
-import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { ObjectInfo, PublicOssProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -21,6 +28,7 @@ export function ArchiveLinkFields({
   archiveObjectKeys,
   archiveObjectKeysInput,
   archiveFilename,
+  preserveArchivePaths,
   validForSeconds,
   maxDownloads,
   isObjectSearchBusy,
@@ -28,6 +36,7 @@ export function ArchiveLinkFields({
   onObjectSearchChange,
   onArchiveObjectKeysInputChange,
   onArchiveFilenameChange,
+  onPreserveArchivePathsChange,
   onValidForSecondsChange,
   onMaxDownloadsChange,
   onOpenObjectBrowser,
@@ -41,6 +50,7 @@ export function ArchiveLinkFields({
   readonly archiveObjectKeys: readonly string[];
   readonly archiveObjectKeysInput: string;
   readonly archiveFilename: string;
+  readonly preserveArchivePaths: boolean;
   readonly validForSeconds: string;
   readonly maxDownloads: string;
   readonly isObjectSearchBusy: boolean;
@@ -48,6 +58,7 @@ export function ArchiveLinkFields({
   readonly onObjectSearchChange: (query: string) => void;
   readonly onArchiveObjectKeysInputChange: (value: string) => void;
   readonly onArchiveFilenameChange: (value: string) => void;
+  readonly onPreserveArchivePathsChange: (preserve: boolean) => void;
   readonly onValidForSecondsChange: (seconds: string) => void;
   readonly onMaxDownloadsChange: (downloads: string) => void;
   readonly onOpenObjectBrowser: () => void;
@@ -82,6 +93,18 @@ export function ArchiveLinkFields({
         onAppendObjectKey={onAppendObjectKey}
         onRemoveObjectKey={onRemoveObjectKey}
       />
+      <Field orientation="horizontal">
+        <FieldContent>
+          <FieldTitle>Keep bucket folders</FieldTitle>
+          <FieldDescription>
+            Turn off to place every selected file at the ZIP root.
+          </FieldDescription>
+        </FieldContent>
+        <Switch
+          checked={preserveArchivePaths}
+          onCheckedChange={onPreserveArchivePathsChange}
+        />
+      </Field>
       <LinkOptions
         validForSeconds={validForSeconds}
         maxDownloads={maxDownloads}

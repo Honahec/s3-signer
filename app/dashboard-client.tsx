@@ -90,7 +90,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GenerateLinkPanel } from "@/app/generate-link-panel";
+import { GenerateLinkPanel, type ArchiveCreatePayload } from "@/app/generate-link-panel";
 import type { LinkResponse, ObjectInfo, PublicOssProfile } from "@/lib/types";
 
 interface DashboardClientProps {
@@ -248,10 +248,8 @@ export function DashboardClient({ user }: DashboardClientProps) {
   async function createArchiveLink({
     objectKeys,
     downloadFilename,
-  }: {
-    readonly objectKeys: readonly string[];
-    readonly downloadFilename: string | null;
-  }) {
+    archiveLayout,
+  }: ArchiveCreatePayload) {
     if (!selectedProfileId) {
       toast.error("Create an OSS profile first.");
       return false;
@@ -266,6 +264,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
           validForSeconds === "Permanent" ? null : Number(validForSeconds),
         maxDownloads: maxDownloads ? Number(maxDownloads) : null,
         downloadFilename,
+        archiveLayout,
       };
       const data = await api<{ link: LinkResponse; url: string }>(
         "/api/archives",

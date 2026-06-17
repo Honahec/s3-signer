@@ -16,6 +16,7 @@ import {
 import {
   BusyIcon,
 } from "@/app/generate-link-shared";
+import { ARCHIVE_LAYOUTS } from "@/lib/archive-layout";
 import type {
   ArchiveCreatePayload,
   GenerateLinkPanelProps,
@@ -59,6 +60,7 @@ export function GenerateLinkPanel({
 }: GenerateLinkPanelProps) {
   const [archiveObjectKeysInput, setArchiveObjectKeysInput] = useState("");
   const [archiveFilename, setArchiveFilename] = useState("bundle.zip");
+  const [preserveArchivePaths, setPreserveArchivePaths] = useState(true);
   const [archiveProgress, setArchiveProgress] = useState(0);
   const [archiveStageIndex, setArchiveStageIndex] = useState(0);
 
@@ -86,6 +88,9 @@ export function GenerateLinkPanel({
     const succeeded = await onCreateArchiveLink({
       objectKeys: archiveObjectKeys,
       downloadFilename: archiveFilename.trim() || null,
+      archiveLayout: preserveArchivePaths
+        ? ARCHIVE_LAYOUTS.preserve
+        : ARCHIVE_LAYOUTS.flat,
     });
 
     window.clearInterval(tick);
@@ -178,6 +183,7 @@ export function GenerateLinkPanel({
                   archiveObjectKeys={archiveObjectKeys}
                   archiveObjectKeysInput={archiveObjectKeysInput}
                   archiveFilename={archiveFilename}
+                  preserveArchivePaths={preserveArchivePaths}
                   validForSeconds={validForSeconds}
                   maxDownloads={maxDownloads}
                   isObjectSearchBusy={isObjectSearchBusy}
@@ -185,6 +191,7 @@ export function GenerateLinkPanel({
                   onObjectSearchChange={onObjectSearchChange}
                   onArchiveObjectKeysInputChange={setArchiveObjectKeysInput}
                   onArchiveFilenameChange={setArchiveFilename}
+                  onPreserveArchivePathsChange={setPreserveArchivePaths}
                   onValidForSecondsChange={onValidForSecondsChange}
                   onMaxDownloadsChange={onMaxDownloadsChange}
                   onOpenObjectBrowser={onOpenObjectBrowser}

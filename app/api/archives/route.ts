@@ -31,7 +31,12 @@ export async function POST(request: Request) {
     const downloadFilename = payload.downloadFilename ?? `${linkId}.zip`;
 
     try {
-      await createArchiveObject(profile, archiveKey, payload.objectKeys);
+      await createArchiveObject(
+        profile,
+        archiveKey,
+        payload.objectKeys,
+        payload.archiveLayout
+      );
     } catch (error) {
       throw stageError("archive-create", error);
     }

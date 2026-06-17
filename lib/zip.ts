@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { crc32 } from "node:zlib";
+import { sanitizeZipEntryName } from "@/lib/zip-entry-name";
 
 interface ZipEntryInput {
   readonly name: string;
@@ -23,15 +23,7 @@ const DOS_TIME = 0;
 const ZIP32_MAX = 0xffffffff;
 const ZIP32_MAX_ENTRIES = 0xffff;
 
-export function sanitizeZipEntryName(name: string) {
-  const cleaned = name
-    .replace(/\\/g, "/")
-    .split("/")
-    .filter((part) => part && part !== "." && part !== "..")
-    .join("/");
-
-  return cleaned || `object-${randomUUID()}`;
-}
+export { sanitizeZipEntryName };
 
 export function createStoredZipStream(entries: readonly ZipEntryInput[]) {
   if (entries.length > ZIP32_MAX_ENTRIES) {

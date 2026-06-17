@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ARCHIVE_LAYOUTS } from "@/lib/archive-layout";
 
 const urlSchema = z
   .string()
@@ -44,6 +45,9 @@ export const createLinkSchema = z.object({
 export const createArchiveSchema = z.object({
   profileId: z.string().uuid(),
   objectKeys: z.array(z.string().trim().min(1).max(2048)).min(1).max(1000),
+  archiveLayout: z
+    .enum([ARCHIVE_LAYOUTS.preserve, ARCHIVE_LAYOUTS.flat])
+    .default(ARCHIVE_LAYOUTS.preserve),
   validForSeconds: z
     .number()
     .int()

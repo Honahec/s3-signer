@@ -1,9 +1,11 @@
 import type { FormEvent } from "react";
+import type { ArchiveLayout } from "@/lib/archive-layout";
 import type { ObjectInfo, PublicOssProfile } from "@/lib/types";
 
 export interface ArchiveCreatePayload {
   readonly objectKeys: readonly string[];
   readonly downloadFilename: string | null;
+  readonly archiveLayout: ArchiveLayout;
 }
 
 export interface GenerateLinkPanelProps {
