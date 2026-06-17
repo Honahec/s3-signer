@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createArchiveSchema,
   createLinkSchema,
   createProfileSchema,
   listObjectsSchema,
@@ -62,5 +63,17 @@ describe("validators", () => {
         query: "invoice",
       }).query
     ).toBe("invoice");
+  });
+
+  it("accepts archive creation input", () => {
+    const result = createArchiveSchema.parse({
+      profileId: "00000000-0000-4000-8000-000000000000",
+      objectKeys: ["archives/a.txt", "archives/b.txt"],
+      validForSeconds: 3600,
+      downloadFilename: "bundle.zip",
+    });
+
+    expect(result.objectKeys).toHaveLength(2);
+    expect(result.downloadFilename).toBe("bundle.zip");
   });
 });

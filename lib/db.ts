@@ -89,6 +89,9 @@ async function migrate() {
       oss_profile_id uuid NOT NULL REFERENCES oss_profiles(id),
       profile_snapshot jsonb NOT NULL,
       object_key text NOT NULL,
+      source_object_keys jsonb,
+      archive_object_key text,
+      archive_deleted_at timestamptz,
       valid_until timestamptz,
       max_downloads integer,
       downloads_served integer NOT NULL DEFAULT 0,
@@ -111,6 +114,15 @@ async function migrate() {
   );
   await db.query(
     "ALTER TABLE download_links ALTER COLUMN valid_until DROP NOT NULL"
+  );
+  await db.query(
+    "ALTER TABLE download_links ADD COLUMN IF NOT EXISTS source_object_keys jsonb"
+  );
+  await db.query(
+    "ALTER TABLE download_links ADD COLUMN IF NOT EXISTS archive_object_key text"
+  );
+  await db.query(
+    "ALTER TABLE download_links ADD COLUMN IF NOT EXISTS archive_deleted_at timestamptz"
   );
   await db.query(
     "CREATE INDEX IF NOT EXISTS idx_download_links_profile ON download_links(oss_profile_id)"
@@ -143,6 +155,10 @@ export function mapLink(row: QueryResultRow): DownloadLink {
     ossProfileId: row.oss_profile_id,
     profileSnapshot: row.profile_snapshot as ProfileSnapshot,
     objectKey: row.object_key,
+    sourceObjectKeys: stringArrayOrNull(row.source_object_keys),
+    archiveObjectKey: row.archive_object_key,
+    archiveDeletedAt:
+      row.archive_deleted_at?.toISOString?.() ?? row.archive_deleted_at ?? null,
     validUntil: row.valid_until?.toISOString?.() ?? row.valid_until ?? null,
     maxDownloads: row.max_downloads,
     downloadsServed: row.downloads_served,
@@ -150,4 +166,12 @@ export function mapLink(row: QueryResultRow): DownloadLink {
     createdAt: row.created_at?.toISOString?.() ?? row.created_at,
     deletedAt: row.deleted_at?.toISOString?.() ?? row.deleted_at ?? null,
   };
+}
+
+function stringArrayOrNull(value: unknown) {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  return value.filter((item) => typeof item === "string");
 }

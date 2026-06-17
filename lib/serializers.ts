@@ -37,6 +37,8 @@ export function publicLink(
     profileName: link.profileSnapshot.name,
     bucket: link.profileSnapshot.bucket,
     objectKey: link.objectKey,
+    sourceObjectKeys: link.sourceObjectKeys,
+    isArchive: link.archiveObjectKey !== null,
     validUntil: link.validUntil,
     maxDownloads: link.maxDownloads,
     downloadsServed: link.downloadsServed,

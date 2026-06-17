@@ -43,6 +43,9 @@ export interface DownloadLink {
   ossProfileId: string;
   profileSnapshot: ProfileSnapshot;
   objectKey: string;
+  sourceObjectKeys: readonly string[] | null;
+  archiveObjectKey: string | null;
+  archiveDeletedAt: string | null;
   validUntil: string | null;
   maxDownloads: number | null;
   downloadsServed: number;
@@ -57,6 +60,8 @@ export interface LinkResponse {
   profileName: string;
   bucket: string;
   objectKey: string;
+  sourceObjectKeys: readonly string[] | null;
+  isArchive: boolean;
   validUntil: string | null;
   maxDownloads: number | null;
   downloadsServed: number;

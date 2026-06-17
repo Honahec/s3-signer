@@ -41,6 +41,24 @@ export const createLinkSchema = z.object({
   downloadFilename: z.string().trim().max(255).optional().nullable(),
 });
 
+export const createArchiveSchema = z.object({
+  profileId: z.string().uuid(),
+  objectKeys: z.array(z.string().trim().min(1).max(2048)).min(1).max(1000),
+  validForSeconds: z
+    .number()
+    .int()
+    .min(60)
+    .max(60 * 60 * 24 * 365),
+  maxDownloads: z.number().int().min(1).max(1_000_000).optional().nullable(),
+  downloadFilename: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .regex(/\.zip$/i, "download filename must end with .zip")
+    .optional(),
+});
+
 export const listObjectsSchema = z.object({
   profileId: z.string().uuid(),
   query: z.string().trim().max(1024).optional().default(""),
