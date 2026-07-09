@@ -329,7 +329,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
         isTruncated: boolean;
         nextContinuationToken?: string;
       }>(`/api/objects?${params.toString()}`);
-      setObjects(data.objects);
+      setObjects(data.objects.filter((obj) => !obj.key.endsWith("/")));
       setContinuationToken(next ? (nextContinuationToken ?? null) : null);
       setNextContinuationToken(data.nextContinuationToken);
     });
