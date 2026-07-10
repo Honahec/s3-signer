@@ -70,7 +70,7 @@ export function ObjectBrowserDialog({
               : "Select an OSS profile"}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 max-w-full flex-col gap-4">
           <InputGroup>
             <InputGroupAddon>
               <SearchIcon />
@@ -96,17 +96,27 @@ export function ObjectBrowserDialog({
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
-          <div className="max-h-96 overflow-auto rounded-lg border">
+          <div className="min-w-0 max-w-full max-h-96 overflow-auto rounded-lg border">
             {objects.length ? (
-              <Table>
+              <Table className="table-fixed">
+                <colgroup>
+                  <col />
+                  <col className="w-16 sm:w-20" />
+                  <col className="w-24 sm:w-40" />
+                  <col className="w-20" />
+                </colgroup>
                 <TableBody>
                   {objects.map((object) => (
                     <TableRow key={object.key}>
-                      <TableCell className="max-w-lg truncate font-medium">
-                        {object.key}
+                      <TableCell className="min-w-0 overflow-hidden font-medium">
+                        <span className="block max-w-full truncate">
+                          {object.key}
+                        </span>
                       </TableCell>
                       <TableCell>{formatBytes(object.size)}</TableCell>
-                      <TableCell>{object.storageClass ?? ""}</TableCell>
+                      <TableCell className="truncate">
+                        {object.storageClass ?? ""}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           type="button"
