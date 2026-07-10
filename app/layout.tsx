@@ -3,16 +3,11 @@ import localFont from "next/font/local";
 import { Providers } from "@/app/providers";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/geist-latin.woff2",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-
-const geistMono = localFont({
-  src: "./fonts/geist-mono-latin.woff2",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const bricolageGrotesque = localFont({
+  src: "./fonts/BricolageGrotesque-VariableFont_opsz,wdth,wght.ttf",
+  variable: "--font-bricolage-grotesque",
+  weight: "200 800",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +24,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bricolageGrotesque.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
